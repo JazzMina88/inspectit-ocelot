@@ -1,22 +1,23 @@
 import yaml from 'js-yaml';
 import React from 'react';
-import { connect } from 'react-redux';
-import { configurationActions, configurationSelectors } from '../../../redux/ducks/configuration';
-import { notificationActions } from '../../../redux/ducks/notification';
+import {connect} from 'react-redux';
+import {configurationActions, configurationSelectors} from '../../../redux/ducks/configuration';
+import {notificationActions} from '../../../redux/ducks/notification';
 import EditorView from '../../editor/EditorView';
 import CreateDialog from './dialogs/CreateDialog';
 import DeleteDialog from './dialogs/DeleteDialog';
+import UploadDialog from './dialogs/UploadDialog';
 import MoveDialog from './dialogs/MoveDialog';
 import FileToolbar from './FileToolbar';
 import FileTree from './FileTree';
-import { enableOcelotAutocompletion } from './OcelotAutocompleter';
+import {enableOcelotAutocompletion} from './OcelotAutocompleter';
 import SearchDialog from './dialogs/SearchDialog';
 import ConvertDialog from '../../common/dialogs/ConvertDialog';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import ShowConfigurationDialog from '../dialogs/ShowConfigurationDialog';
 
 /** Data */
-import { CONFIGURATION_TYPES, DEFAULT_CONFIG_TREE_KEY } from '../../../data/constants';
+import {CONFIGURATION_TYPES, DEFAULT_CONFIG_TREE_KEY} from '../../../data/constants';
 
 /**
  * The header component of the editor view.
@@ -59,6 +60,7 @@ const EditorHeader = ({ icon, path, name, isContentModified, readOnly }) => (
 class ConfigurationView extends React.Component {
   state = {
     isDeleteFileDialogShown: false,
+    isUploadDialogShown: false,
     isCreateDialogShown: false,
     isDirectoryMode: false,
     configurationType: CONFIGURATION_TYPES.YAML,
@@ -120,13 +122,27 @@ class ConfigurationView extends React.Component {
 
   hideDeleteFileDialog = () => this.setState({ isDeleteFileDialogShown: false, filePath: null });
 
+  showUploadDialog = () => this.setState({ isUploadDialogShown: true });
+
+  hideUploadDialog = () => this.setState({ isUploadDialogShown: false });
+
   showCreateFileDialog = (filePath, configurationType) =>
-    this.setState({ isCreateDialogShown: true, isDirectoryMode: false, configurationType: configurationType, filePath });
+    this.setState({
+      isCreateDialogShown: true,
+      isDirectoryMode: false,
+      configurationType: configurationType,
+      filePath,
+    });
 
   hideCreateDialog = () => this.setState({ isCreateDialogShown: false, isDirectoryMode: false, filePath: null });
 
   showCreateDirectoryDialog = (filePath) =>
-    this.setState({ isCreateDialogShown: true, isDirectoryMode: true, configurationType: CONFIGURATION_TYPES.YAML, filePath });
+    this.setState({
+      isCreateDialogShown: true,
+      isDirectoryMode: true,
+      configurationType: CONFIGURATION_TYPES.YAML,
+      filePath,
+    });
 
   showMoveDialog = (filePath) => this.setState({ isMoveDialogShown: true, filePath });
 
@@ -212,6 +228,7 @@ class ConfigurationView extends React.Component {
           <FileToolbar
             readOnly={readOnly}
             showDeleteFileDialog={this.showDeleteFileDialog}
+            showUploadDialog={this.showUploadDialog}
             showCreateFileDialog={this.showCreateFileDialog}
             showCreateDirectoryDialog={this.showCreateDirectoryDialog}
             showMoveDialog={this.showMoveDialog}
@@ -221,6 +238,7 @@ class ConfigurationView extends React.Component {
           <FileTree
             className="fileTree"
             showDeleteFileDialog={this.showDeleteFileDialog}
+            showUploadDialog={this.showUploadDialog}
             showCreateFileDialog={this.showCreateFileDialog}
             showCreateDirectoryDialog={this.showCreateDirectoryDialog}
             showMoveDialog={this.showMoveDialog}
@@ -256,6 +274,7 @@ class ConfigurationView extends React.Component {
         </EditorView>
 
         <DeleteDialog visible={this.state.isDeleteFileDialogShown} onHide={this.hideDeleteFileDialog} filePath={this.state.filePath} />
+        <UploadDialog visible={this.state.isUploadDialogShown} onHide={this.hideUploadDialog} />
         <CreateDialog
           directoryMode={this.state.isDirectoryMode}
           visible={this.state.isCreateDialogShown}
