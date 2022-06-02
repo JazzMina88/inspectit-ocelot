@@ -1,0 +1,47 @@
+inspectit:
+  instrumentation:
+    rules:
+
+      'r_httpurlconnection_servicegraph_propagation':
+        docs:
+          since: '1.2.1'
+          description: 'Prepares the context to contain the service graph correlation information (e.g. origin_service and target_service).'
+        include:
+          'r_servicegraph_prepare_down_propagation': true
+        scopes:
+          's_httpurlconnection_connect': true
+          's_httpurlconnection_getOutputStream': true
+          's_httpurlconnection_getInputStream': true
+
+      'r_httpurlconnection_servicegraph_record':
+        docs:
+          since: '1.2.1'
+          description: 'Records HTTP calls done via HTTPUrlConnection in the [service/out/responsetime] metric for the service graph.'
+        include:
+          'r_servicegraph_outbound_record_method': true
+          'r_httpurlconnection_detect_end': true
+          'r_httpurlconnection_extract_request_details': true
+        scopes:
+          's_httpurlconnection_getInputStream': true
+          's_httpurlconnection_requestInitiators': true
+        entry:
+          'servicegraph_is_entry':
+            action: 'a_entrypoint_check'
+            constant-input: 
+              'marker': 'servicegraph_outbound_marker'
+            only-if-true: 'httpurlconnection_is_end'
+          'servicegraph_protocol':
+            action: 'a_assign_value'
+            constant-input: 
+              'value': "http"
+        exit:
+          'servicegraph_target_external':
+            only-if-null: 'servicegraph_target_service'
+            action: 'a_assign_value'
+            data-input: 
+              'value': 'http_target_host'
+          'servicegraph_is_error':
+            action: 'a_assign_value'
+            data-input:
+              'value': 'http_is_error'
+      

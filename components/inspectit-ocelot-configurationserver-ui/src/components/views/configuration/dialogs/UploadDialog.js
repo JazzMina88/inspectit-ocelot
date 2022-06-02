@@ -1,77 +1,33 @@
-import React, { useMemo } from 'react';
-import { connect } from 'react-redux';
-import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
-import { useDropzone } from 'react-dropzone';
-
-const baseStyle = {
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: '20px',
-  borderWidth: 2,
-  borderRadius: 2,
-  borderColor: '#eeeeee',
-  borderStyle: 'dashed',
-  backgroundColor: '#fafafa',
-  color: '#bdbdbd',
-  outline: 'none',
-  transition: 'border .24s ease-in-out',
-};
-
-const focusedStyle = {
-  borderColor: '#2196f3',
-};
-
-const acceptStyle = {
-  borderColor: '#00e676',
-};
-
-const rejectStyle = {
-  borderColor: '#ff1744',
-};
-
-function Dropzone(props) {
-  const { acceptedFiles, getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } = useDropzone({
-    accept: {
-      text: ['.yml', '.yaml'],
-    },
-  });
-
-  const style = useMemo(
-    () => ({
-      ...baseStyle,
-      ...(isFocused ? focusedStyle : {}),
-      ...(isDragAccept ? acceptStyle : {}),
-      ...(isDragReject ? rejectStyle : {}),
-    }),
-    [isFocused, isDragAccept, isDragReject]
-  );
-  const files = acceptedFiles.map((file) => (
-    <li key={file.path}>
-      {file.path} - {file.size} bytes
-    </li>
-  ));
-
-  return (
-    <section className="container">
-      <div {...getRootProps({ style })}>
-        <input {...getInputProps()} />
-        <p>Drag 'n' drop some files here, or click to select files</p>
-      </div>
-      <aside>
-        <h4>Files</h4>
-        <ul>{files}</ul>
-      </aside>
-    </section>
-  );
-}
-
-<Dropzone />;
+import React from 'react';
+import {Button} from 'primereact/button';
+import {Dialog} from 'primereact/dialog';
+import Dropzone from 'react-dropzone';
+import {configurationActions} from '../../../../redux/ducks/configuration';
+import PropTypes from 'prop-types';
+import {isSelectionDirectory} from '../../../../redux/ducks/configuration/selectors';
+import {connect} from 'react-redux';
 
 class UploadDialog extends React.Component {
+  constructor() {
+    super();
+    this.handleClick = this.handleClick.bind(this);
+    this.onDrop = (files) => {
+      this.setState({files});
+    };
+    this.state = {
+      files: [],
+    };
+  }
+
   render() {
+    console.log(this.props);
+
+    const files = this.state.files.map((file) => (
+      <li key={file.name}>
+        {file.name} - {file.size} bytes
+      </li>
+    ));
+
     return (
       <Dialog
         header={'Upload file/directory'}
@@ -80,19 +36,69 @@ class UploadDialog extends React.Component {
         onHide={this.props.onHide}
         footer={
           <div>
-            <Button label="Upload" onClick={this.handleClick} />
-            <Button label="Cancel" className="p-button-secondary" onClick={this.props.onHide} />
+            <Button label="Upload" onClick={this.handleClick}/>
+            <Button label="Cancel" className="p-button-secondary" onClick={this.props.onHide}/>
           </div>
         }
       >
-        <Dropzone />
+        <Dropzone onDrop={this.onDrop}>
+          {({getRootProps, getInputProps}) => (
+            <section className="container">
+              <div {...getRootProps({className: 'dropzone'})}>
+                <input {...getInputProps()} />
+                <p>Drag and drop some files here, or click to select files</p>
+              </div>
+              <aside>
+                <h4>Files</h4>
+                <ul>{files}</ul>
+              </aside>
+            </section>
+          )}
+        </Dropzone>
       </Dialog>
     );
   }
 
-  handleClick = () => {
+  handleClick() {  
+    this.state.files.forEach((file) => {
+      const fileName = this.props.selection + '/' + file.name;
+      const content = "text";
+      this.props.writeFile(fileName, content, true, true);
+    });
     this.props.onHide();
+  }
+}
+
+function mapStateToProps(state) {
+  const {selection, files} = state.configuration;
+
+  const isDirectory = isSelectionDirectory(state);
+
+  return {
+    isDirectory,
+    files,
+    selection,
   };
 }
 
-export default connect()(UploadDialog);
+const mapDispatchToProps = {
+  writeFile: configurationActions.writeFile,
+};
+
+UploadDialog.props = {
+  filePath: PropTypes.string,
+  directoryMode: PropTypes.bool,
+  visible: PropTypes.bool,
+  onHide: PropTypes.bool,
+  writeFile: PropTypes.func,
+};
+
+UploadDialog.defaultProperties = {
+  visible: true,
+  onHide: () => {
+  },
+  writeFile: () => {
+  },
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(UploadDialog);

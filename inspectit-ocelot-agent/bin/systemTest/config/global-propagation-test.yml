@@ -1,0 +1,22 @@
+
+#used by:
+# - HttpUrlConnectionContextPropagationTest
+# - ServletApiContextPropagationTest
+inspectit:
+  instrumentation:
+    data:
+      up_propagated:
+        up-propagation: GLOBAL
+        down-propagation: JVM_LOCAL
+      up_propagated2:
+        up-propagation: GLOBAL
+        down-propagation: JVM_LOCAL
+      down_propagated:
+        down-propagation: GLOBAL
+        is-tag: true
+      down_propagated_2:
+        down-propagation: GLOBAL
+        is-tag: true
+      something:
+        down-propagation: JVM_LOCAL
+        is-tag: true

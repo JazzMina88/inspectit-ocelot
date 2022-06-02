@@ -1,0 +1,74 @@
+inspectit:
+
+  # when enabled inspectIT reports execution times for metric and trace collection and processing
+  self-monitoring:
+    enabled: true
+
+    # settings regarding the capturing of action related metrics
+    action-metrics:
+      # if true, the execution time (duration in ms) per action will be recorded
+      enabled: false
+
+    # settings regarding the update and notification frequency of the agent health
+    agent-health:
+      # defines how long a non-ok and non-instrumentation-related health status is valid
+      # health changes due to instrumentation errors are valid until the next re-instrumentation
+      validity-period: 1h
+
+  # definitions of existing self-monitoring metrics
+  metrics:
+    definitions:
+      '[inspectit/self/duration]':
+        enabled: ${inspectit.self-monitoring.enabled}
+        unit: us
+        description: "inspectIT Ocelot self-monitoring duration"
+        views:
+          '[inspectit/self/duration]':
+            aggregation: SUM
+            tags: {"component-name" : true}
+
+      '[inspectit/self/instrumentation-queue-size]':
+        enabled: ${inspectit.self-monitoring.enabled}
+        type: LONG
+        unit: classes
+        description: "the number of pending classes inspectIT has to check if they require instrumentation updates"
+
+      '[inspectit/self/instrumented-classes]':
+        enabled: ${inspectit.self-monitoring.enabled}
+        type: LONG
+        unit: classes
+        description: "the number of classes currently instrumented by inspectIT"
+
+      '[inspectit/self/logs]':
+        enabled: ${inspectit.self-monitoring.enabled}
+        type: LONG
+        unit: log events
+        description: "the number of log events"
+        views:
+          '[inspectit/self/logs]':
+            aggregation: SUM
+            tags: {"level": true}
+
+      '[inspectit/self/health]':
+        enabled: ${inspectit.self-monitoring.enabled}
+        type: LONG
+        unit: health
+        description: "current health status of the agent (0 = OK, 1 = WARNING, 2 = ERROR)"
+        views:
+          '[inspectit/self/health]':
+            aggregation: LAST_VALUE
+
+      '[inspectit/self/action/execution-time]':
+        enabled: ${inspectit.self-monitoring.action-metrics.enabled}
+        type: LONG
+        unit: us
+        description: "the execution time of the action"
+        views:
+          '[inspectit/self/action/execution-time]':
+            aggregation: SUM
+            tags:
+              action_name: true
+          '[inspectit/self/action/count]':
+            aggregation: COUNT
+            tags:
+              action_name: true

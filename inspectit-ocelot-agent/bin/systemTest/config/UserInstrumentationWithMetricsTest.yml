@@ -1,0 +1,47 @@
+inspectit:
+  metrics:
+    definitions:
+      '[my/invocation]':
+        type: LONG
+        unit: invocations
+        views:
+          '[my/invocation/count]':
+            aggregation: count
+            with-common-tags: false
+            tags:
+              method_name: true
+              user_tag: true
+          '[my/invocation/sum]':
+            aggregation: sum
+            with-common-tags: false
+            tags:
+              method_name: true
+
+  instrumentation:
+    scopes:
+      UserInstrumentationWithMetricsTest-invocationCount:
+        type: &UserInstrumentationWithMetricsTest
+          name: UserInstrumentationWithMetricsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: invocationCount
+
+      UserInstrumentationWithMetricsTest-responseTimeMeasuring:
+        type: {<<: *UserInstrumentationWithMetricsTest}
+        methods:
+          - name: responseTimeMeasuring
+
+    rules:
+      UserInstrumentationWithMetricsTest-invocationCount:
+        scopes:
+          UserInstrumentationWithMetricsTest-invocationCount : true
+        entry:
+          current_method_name:  {action: a_method_getFQN}
+        metrics:
+          '[my/invocation]':
+            value: 42
+            data-tags: {method_name: current_method_name, user_tag: user_tag}
+
+      r_method_metric:
+        scopes:
+          UserInstrumentationWithMetricsTest-responseTimeMeasuring: true

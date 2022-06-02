@@ -1,0 +1,238 @@
+inspectit:
+
+  privacy:
+    obfuscation:
+      patterns:
+        - pattern: toObfuscate
+        - pattern: toObfuscateValue
+          checkData: true
+          replace-regex: Obfuscate
+
+  instrumentation:
+
+    scopes:
+      TraceSettingsTest-nested:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: nestedC
+
+      TraceSettingsTest-attributesSetter:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: attributesSetter
+      TraceSettingsTest-attributesSetterWithConditions:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: attributesSetterWithConditions
+
+      TraceSettingsTest-conditionalRoot:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: conditionalRoot
+
+      TraceSettingsTest-named:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: named
+            matcher-mode: STARTS_WITH
+
+      TraceSettingsTest-asyncInterleaved:
+        type:
+          name: TraceSettingsTest$AsyncTask
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: doAsync
+
+      TraceSettingsTest-samplingTestEndMarker:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: samplingTestEndMarker
+
+
+      TraceSettingsTest-fixedSamplingRateTest:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: fixedSamplingRateTest
+
+      TraceSettingsTest-dynamicSamplingRateTest:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: dynamicSamplingRateTest
+
+      TraceSettingsTest-nestedSamplingTest:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: nestedSamplingTestRoot
+          - name: nestedSamplingTestNested
+
+
+      TraceSettingsTest-nestedSamplingTest-Default:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: nestedSamplingTestNestedDefault
+
+      TraceSettingsTest-withErrorStatus:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: withErrorStatus
+
+      TraceSettingsTest-withoutErrorStatus:
+        type:
+          name: TraceSettingsTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: withoutErrorStatus
+
+
+    rules:
+      TraceSettingsTest-startspan:
+        scopes:
+          TraceSettingsTest-attributesSetter: true
+          TraceSettingsTest-attributesSetterWithConditions: true
+          TraceSettingsTest-nested: true
+          TraceSettingsTest-nestedSamplingTest-Default: true
+          TraceSettingsTest-withoutErrorStatus: true
+        tracing:
+          start-span: true
+
+      TraceSettingsTest-attributesSetter:
+        scopes:
+          TraceSettingsTest-attributesSetter: true
+        tracing:
+          attributes:
+            entry: entry_val
+            exit: exit_val
+            toObfuscate: exit_val
+            anything: toObfuscate_val
+        entry:
+          entry_val:
+            action: a_assign_value
+            constant-input: {value: "const"}
+          toObfuscate_val:
+            action: a_assign_value
+            constant-input: {value: "toObfuscateValue"}
+        exit:
+          exit_val:
+            action: a_assign_value
+            data-input: {value: _returnValue}
+
+
+      TraceSettingsTest-attributesSetterWithConditions:
+        scopes:
+          TraceSettingsTest-attributesSetterWithConditions: true
+        tracing:
+          attributes:
+            entry: entry_val
+            exit: exit_val
+          attribute-conditions:
+            only-if-true: _arg0
+        entry:
+          entry_val:
+            action: a_assign_value
+            constant-input: {value: "const"}
+        exit:
+          exit_val:
+            action: a_assign_value
+            data-input: {value: _returnValue}
+
+      TraceSettingsTest-conditionalRoot:
+        scopes:
+          TraceSettingsTest-conditionalRoot: true
+        tracing:
+          start-span: true
+          start-span-conditions:
+            only-if-true: _arg0
+
+      TraceSettingsTest-named:
+        scopes:
+          TraceSettingsTest-named: true
+        tracing:
+          start-span: true
+          name: _arg0
+
+      TraceSettingsTest-asyncInterleaved:
+        scopes:
+          TraceSettingsTest-asyncInterleaved: true
+        tracing:
+          start-span: true
+          continue-span: span_id
+          end-span: true
+          end-span-conditions: {only-if-true: _arg3}
+          store-span: span_id
+          attributes:
+            "1": _arg0
+            "2": _arg1
+            "3": _arg2
+
+        entry:
+          span_id:
+            action: a_attachment_get
+            constant-input: {key: "span_obj"}
+            data-input: {target: _this}
+        exit:
+          do_write_span_obj:
+            action: a_attachment_put
+            constant-input: {key: "span_obj"}
+            data-input: {value: span_id, target: _this}
+
+
+      TraceSettingsTest-samplingTestEndMarker:
+        scopes:
+          TraceSettingsTest-samplingTestEndMarker: true
+        tracing:
+          start-span: true
+          name: _arg0
+
+
+      TraceSettingsTest-fixedSamplingRateTest:
+        scopes:
+          TraceSettingsTest-fixedSamplingRateTest: true
+        tracing:
+          start-span: true
+          name: _arg0
+          sample-probability: 0.5
+
+
+      TraceSettingsTest-dynamicSamplingRateTest:
+        scopes:
+          TraceSettingsTest-dynamicSamplingRateTest: true
+        tracing:
+          start-span: true
+          name: _arg0
+          sample-probability: _arg1
+
+      TraceSettingsTest-nestedSamplingTest:
+        scopes:
+          TraceSettingsTest-nestedSamplingTest: true
+        tracing:
+          start-span: true
+          sample-probability: _arg0
+
+      TraceSettingsTest-withErrorStatus:
+        scopes:
+          TraceSettingsTest-withErrorStatus: true
+        tracing:
+          start-span: true
+          error-status: _arg0

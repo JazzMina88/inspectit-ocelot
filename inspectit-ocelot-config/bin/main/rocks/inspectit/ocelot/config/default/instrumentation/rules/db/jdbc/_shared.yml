@@ -1,0 +1,61 @@
+inspectit:
+  instrumentation:
+
+    # # # # # # # # # # # # # # # # # # # # # #
+    # Data Definition
+    data:
+      # Used to detect nested JDBC invocation (e.g. a Hikari Proxy)
+      'jdbc_entrypoint_marker': 
+        down-propagation: JVM_LOCAL
+        
+      # Stores the prepared sql captured via JDBC-driver specific instrumentations
+      # The value is up-propagated because the actual recording happens on the first encountered JDBC layer,
+      # which might not be a driver but a proxy
+      'prepared_sql':
+        up-propagation: JVM_LOCAL
+
+    # # # # # # # # # # # # # # # # # # # # # #
+    # Rules Definition
+    rules:
+
+      'r_jdbc_detect_entry':
+        docs:
+          since: '1.2.1'
+          description: 'Can be included to detect the entry into the first JDBC layer.'
+        entry:
+          'jdbc_is_entry':
+            action: 'a_entrypoint_check'
+            constant-input: 
+              'marker': 'jdbc_entrypoint_marker'
+
+      r_jdbc_extract_url:
+        docs:
+          since: '1.2.1'
+          description: |-
+            Can be included to extract the url of the JDBC connection.
+            Extraction only happens for the first JDBC layer, which might be a JDBC proxy.
+        include:
+          'r_jdbc_detect_entry': true
+        entry:
+          'jdbc_url':
+            action: 'a_jdbc_getUrl'
+            only-if-true: 'jdbc_is_entry'
+            data-input: 
+              'statement': _this
+
+      r_jdbc_prepared_sql_stop_propagation:
+        docs:
+          since: '1.2.1'
+          description: |-
+            This rule does not provide any functionality but a performance benefit.
+            Driver-specific instrumentations can write 'prepared_sql' which gets up-propagated.
+            This rule limits the up-propagation to the JDBC scope, because propagating it up further is not necessary.
+        include:
+          'r_jdbc_detect_entry': true
+        scopes:
+          's_jdbc_preparedstatement_execute': true
+          's_jdbc_preparedstatement_executeBatch': true
+        post-exit:
+          'prepared_sql':
+            action: 'a_assign_null'
+            only-if-true: 'jdbc_is_entry'

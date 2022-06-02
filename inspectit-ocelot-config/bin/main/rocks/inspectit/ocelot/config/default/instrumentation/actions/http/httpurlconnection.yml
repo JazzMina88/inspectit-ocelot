@@ -1,0 +1,112 @@
+inspectit:
+  instrumentation:
+    actions:
+
+      'a_httpurlconnection_getTargetHost':
+        docs:
+          since: '1.2.1'
+          description: "Extracts the target of the request in the format 'host:port'."
+          return-value: "The target as a String in the form 'host:port'."
+        imports:
+          - 'java.net'
+        input:
+          _this: 'HttpURLConnection'
+        value-body: |
+          URL url = _this.getURL();
+          int port = url.getPort();
+          if (port == -1) {
+            return url.getHost();
+          } else {
+            return url.getHost() + ":" + port;
+          }
+
+      'a_httpurlconnection_getPath':
+        docs:
+          since: '1.2.1'
+          description: 'Extracts the target path of the request.'
+          return-value: "The target HTTP path as a String."
+        input:
+          _this: 'java.net.HttpURLConnection'
+        value: '_this.getURL().getPath()'
+
+      'a_httpurlconnection_getMethod':
+        docs:
+          since: '1.2.1'
+          description: 'Extracts the HTTP method of the request, e.g. GET or POST.'
+          return-value: "The HTTP method as a String."
+        input:
+          _this: 'java.net.HttpURLConnection'
+        value: '_this.getRequestMethod()'
+
+      'a_httpurlconnection_getStatus':
+        docs:
+          since: '1.2.1'
+          description: |-
+            Extracts the response status code if the request returned without an exception.
+            Otherwise returns the name of the exception, e.g. SocketTimeoutException.
+          return-value: "The response status code or the name of the exception as a String."
+        input:
+          _this: 'java.net.HttpURLConnection'
+        value-body: |
+          try {
+            return String.valueOf(_this.getResponseCode());
+          } catch (Throwable t) {
+            return t.getClass().getSimpleName();
+          }
+
+      'a_httpurlconnection_downPropagation':
+        docs:
+          since: '1.2.1'
+          description: 'Writes down-propagated data to the HTTP headers.'
+        is-void: true
+        imports:
+          - 'java.util'
+          - 'java.net'
+        input:
+          _this: 'HttpURLConnection'
+          _attachments: 'ObjectAttachments'
+          _context: 'InspectitContext'
+        value-body: |
+          Object propagationAlreadyPerformed = _attachments.attach(_this, "down_prop_performed", Boolean.TRUE);
+          if (propagationAlreadyPerformed == null) {
+            try {
+              Map headers = _context.getDownPropagationHeaders();
+              Iterator it = headers.entrySet().iterator();
+              while (it.hasNext()) {
+                Map$Entry e = (Map$Entry) it.next();
+                _this.setRequestProperty((String) e.getKey(), (String) e.getValue());
+              }
+            } catch (Exception e) {
+              // silently ignore, this will occur if the url has already been connected
+              // normally does not happen, as we also instrument connect()
+              // it can still happen if connect() is instrumented last
+            }
+          }
+
+      'a_httpurlconnection_upPropagation':
+        docs:
+          since: '1.2.1'
+          description: 'Reads up-propagated data from the HTTP headers'
+        is-void: true
+        imports:
+          - 'java.util'
+          - 'java.net'
+        input:
+          _this: 'HttpURLConnection'
+          _attachments: 'ObjectAttachments'
+          _context: 'InspectitContext'
+        value-body: |
+          Object propagationAlreadyPerformed = _attachments.attach(_this, "up_prop_performed", Boolean.TRUE);
+          if (propagationAlreadyPerformed == null) {
+            Collection headerKeys = _context.getPropagationHeaderNames();
+            Map presentHeaders = new HashMap();
+            Iterator it = headerKeys.iterator();
+            while (it.hasNext()) {
+              String name = (String) it.next();
+              List values = _this.getHeaderFields().get(name);
+              if (values != null) {
+                presentHeaders.put(name, String.join(",", values));
+              }
+            }
+            _context.readUpPropagationHeaders(presentHeaders);
+          }

@@ -1,0 +1,111 @@
+inspectit:
+  instrumentation:
+    actions:
+
+      'a_servletrequest_isHttp':
+        docs:
+          since: '1.2.1'
+          description: 'Checks if a given ServletRequest is an instance of HttpServletRequest.'
+          inputs:
+            'request': 'The given ServletRequest'
+          return-value: "true, if it is an instance of HttpServletRequest, otherwise false."
+        imports:
+          - 'javax.servlet'
+          - 'javax.servlet.http'
+        input:
+          'request': 'ServletRequest'
+        value: 'Boolean.valueOf(request instanceof HttpServletRequest)'
+
+      'a_httpservletrequest_getPath':
+        docs:
+          since: '1.2.1'
+          description: 'Extracts the request path of a given HttpServletRequest.'
+          inputs:
+            'request': 'The given HttpServletRequest'
+          return-value: "The request path as a String."
+        imports:
+          - 'javax.servlet.http'
+        input:
+          'request': 'HttpServletRequest'
+        value: 'java.net.URI.create(request.getRequestURI()).getPath()'
+
+      'a_httpservletrequest_getMethod':
+        docs:
+          since: '1.2.1'
+          description: 'Extracts the HTTP method of a given HttpServletRequest, e.g. GET or POST.'
+          inputs:
+            'request': 'The given HttpServletRequest'
+          return-value: "The HTTP method as a String."
+        imports:
+          - 'javax.servlet.http'
+        input:
+          'request': 'HttpServletRequest'
+        value: 'request.getMethod()'
+
+      'a_httpservletresponse_getStatus':
+        docs:
+          since: '1.2.1'
+          description: 'Extracts the response status code of a given HttpServletResponse.'
+          inputs:
+            'response': 'The given HttpServletResponse'
+          return-value: "The response status code as an Integer."
+        imports:
+          - 'javax.servlet.http'
+        input:
+          'response': 'HttpServletResponse'
+        value: 'Integer.valueOf(response.getStatus())'
+
+      'a_servletapi_downPropagation':
+        docs:
+          since: '1.2.1'
+          description: 'Reads down-propagated data from the request HTTP headers.'
+        is-void: true
+        imports:
+          - 'java.util'
+          - 'javax.servlet'
+          - 'javax.servlet.http'
+        input:
+          _arg0: 'ServletRequest'
+          _context: 'InspectitContext'
+        value-body: |
+          if (_arg0 instanceof HttpServletRequest) {
+            HttpServletRequest req = (HttpServletRequest) _arg0;
+            Collection headerKeys = _context.getPropagationHeaderNames();
+            Map presentHeaders = new HashMap();
+            Iterator it = headerKeys.iterator();
+            while (it.hasNext()) {
+              String name = (String) it.next();
+              java.util.Enumeration values = req.getHeaders(name);
+              if (values != null && values.hasMoreElements()) {
+                presentHeaders.put(name, String.join(",", Collections.list(values)));
+              }
+            }
+            _context.readDownPropagationHeaders(presentHeaders);
+          }
+
+      'a_servletapi_upPropagation':
+        docs:
+          since: '1.2.1'
+          description: "Writes up-propagated data to the given HttpServletResponse's HTTP headers."
+          inputs:
+            'response': 'The HttpServletResponse to write to.'
+        is-void: true
+        imports:
+          - 'java.util'
+          - 'javax.servlet'
+          - 'javax.servlet.http'
+        input:
+          'response': 'ServletResponse'
+          _context: 'InspectitContext'
+        value-body: |
+          if (response instanceof HttpServletResponse) {
+            HttpServletResponse res = (HttpServletResponse) response;
+            if (!res.isCommitted()) {
+              Map headers = _context.getUpPropagationHeaders();
+              Iterator it = headers.entrySet().iterator();
+              while (it.hasNext()) {
+                Map$Entry e = (Map$Entry) it.next();
+                res.setHeader((String) e.getKey(), (String) e.getValue());
+              }
+            }
+          }

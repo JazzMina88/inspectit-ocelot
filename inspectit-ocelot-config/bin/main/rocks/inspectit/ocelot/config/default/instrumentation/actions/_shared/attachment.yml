@@ -1,0 +1,47 @@
+inspectit:
+  instrumentation:
+    actions:
+
+      'a_attachment_get':
+        docs:
+          since: '1.2.1'
+          description: 'Reads the attachment with a given key from a target Object.'
+          inputs:
+            'target': 'The target Object.'
+            'key': 'The key of the attachment.'
+          return-value: 'The attachment Object.'
+        input:
+          _attachments: 'ObjectAttachments'
+          'target': 'Object'
+          'key': 'String'
+        value: '_attachments.getAttachment(target, key)'
+
+      'a_attachment_put':
+        docs:
+          since: '1.2.1'
+          description: 'Replaces the attachment with a given key of a target object with a new one. Returns the previous value.'
+          inputs:
+            'target': 'The target object.'
+            'key': 'The key of the attachment.'
+            'value': 'The new value for the attachment.'
+          return-value: 'The previous value of the replaced attachment.'
+        input:
+          _attachments: ObjectAttachments
+          'target': Object
+          'key': String
+          'value': Object
+        value: '_attachments.attach(target, key, value)'
+
+      'a_attachment_remove':
+        docs:
+          since: '1.2.1'
+          description: 'Removes a given attachment from a target object. Returns the previous value.'
+          inputs:
+            'target': 'The target object.'
+            'key': 'The key of the attachment.'
+          return-value: 'The previous value of the removed attachment.'
+        input:
+          _attachments: ObjectAttachments
+          'target': Object
+          'key': String
+        value: '_attachments.attach(target, key, null)'

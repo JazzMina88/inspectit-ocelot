@@ -1,0 +1,44 @@
+
+inspectit:
+  metrics:
+    definitions:
+      '[entrypoint/invocations]':
+        unit: invocations
+        views:
+          '[entrypoint/invocations]':
+            aggregation: COUNT
+            tags: {method_name : true}
+
+
+  instrumentation:
+    data:
+      entry_point_found:
+        down-propagation: JVM_LOCAL
+
+    scopes:
+      EntryPointDetectionTest-methods:
+        type:
+          name: EntryPointDetectionTest
+          matcher-mode: ENDS_WITH
+        methods:
+          - name: methodA
+          - name: methodB
+
+    rules:
+      EntryPointDetectionTest-methods:
+        scopes:
+          EntryPointDetectionTest-methods: true
+        entry:
+          method_name: {action: a_assign_value, data-input: {value: _methodName}}
+          entry_point_found: {action: a_assign_value, constant-input: {value: true}}
+          is_entry_point:
+            only-if-null: entry_point_found
+            order:
+              reads-before-written:
+                entry_point_found : true
+            action: a_assign_value
+            constant-input: {value: 1}
+        metrics:
+          '[entrypoint/invocations]':
+            value: is_entry_point
+            data-tags: {method_name : method_name}

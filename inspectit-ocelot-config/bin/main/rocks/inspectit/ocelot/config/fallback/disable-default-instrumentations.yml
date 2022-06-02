@@ -1,0 +1,31 @@
+inspectit:
+  instrumentation:
+    rules:
+
+      r_jdbc_servicegraph_record: {enabled: false }
+      r_jdbc_prepared_sql_stop_propagation: {enabled: false }
+      r_jdbc_tracing_statement_execute: {enabled: false }
+      r_jdbc_tracing_statement_executeBatch: {enabled: false }
+      r_jdbc_tracing_preparedstatement: {enabled: false }
+
+      r_apacheclient_propagation: {enabled: false }
+      r_apacheclient_http_metric: {enabled: false }
+      r_apacheclient_servicegraph_propagation: {enabled: false }
+      r_apacheclient_servicegraph_record: {enabled: false }
+      r_apacheclient_tracing: {enabled: false }
+
+      r_httpurlconnection_down_propagation: {enabled: false }
+      r_httpurlconnection_up_propagation: {enabled: false }
+      r_httpurlconnection_http_metric: {enabled: false }
+      r_httpurlconnection_servicegraph_propagation: {enabled: false }
+      r_httpurlconnection_servicegraph_record: {enabled: false }
+      r_httpurlconnection_tracing_start: {enabled: false }
+      r_httpurlconnection_tracing_end: {enabled: false }
+
+      r_servletapi_downPropagation: {enabled: false }
+      r_servletapi_servlet_filter_upPropagation: {enabled: false }
+      r_servletapi_servletresponse_upPropagation: {enabled: false }
+      r_servletapi_http_metric: {enabled: false }
+      r_servletapi_servicegraph_propagation: {enabled: false }
+      r_servletapi_servicegraph_record: {enabled: false }
+      r_servletapi_tracing: {enabled: false }

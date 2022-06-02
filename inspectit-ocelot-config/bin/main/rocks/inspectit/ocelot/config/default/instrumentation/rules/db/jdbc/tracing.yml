@@ -1,0 +1,67 @@
+inspectit:
+  instrumentation:
+    rules:
+
+      'r_jdbc_tracing_statement_execute':
+        docs:
+          since: '1.2.1'
+          description: 'Traces execute/executeUpdate calls with non-prepared SQL (the SQL is given as method argument).'
+        include:
+          'r_jdbc_tracing_defaults': true
+        scopes:
+          's_jdbc_statement_execute': true
+        tracing:
+          attributes:
+            'db.statement': _arg0
+
+      'r_jdbc_tracing_statement_executeBatch':
+        docs:
+          since: '1.2.1'
+          description: 'Traces executeBatch calls with non-prepared SQL.'
+        include:
+          'r_jdbc_tracing_defaults': true
+        scopes:
+          's_jdbc_statement_executeBatch': true
+
+      'r_jdbc_tracing_preparedstatement':
+        docs:
+          since: '1.2.1'
+          description: 'Traces execute/executeUpdate/executeBatch calls with prepared SQL.'
+        include:
+          'r_jdbc_tracing_defaults': true
+        scopes:
+          's_jdbc_preparedstatement_execute': true
+          's_jdbc_preparedstatement_executeBatch': true
+        tracing:
+          attributes:
+            'db.statement': 'prepared_sql' # prepared_sql is populated and up-propagated by driver instrumentations
+          
+      # ---------------------------------------------------------------
+      # Shared JDBC tracing rules below
+      # ---------------------------------------------------------------
+      
+      'r_jdbc_tracing_defaults':
+        docs:
+          since: '1.2.1'
+          description: |-
+            To be included in JDBC tracing rules.
+            Activates span collection and adds default attributes.
+        include:
+          'r_jdbc_detect_entry': true
+          'r_jdbc_extract_url': true
+          'r_tracing_global_attributes': true
+        tracing:
+          start-span: true
+          start-span-conditions:
+            only-if-true: 'jdbc_is_entry'
+          attributes:
+            'db.type': 'db_type_sql'
+            'db.url': 'jdbc_url'
+          error-status: _thrown
+        entry:
+          'db_type_sql':
+            action: 'a_assign_value'
+            constant-input: 
+              'value': 'sql'
+      
+      

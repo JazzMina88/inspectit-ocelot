@@ -1,0 +1,33 @@
+inspectit:
+
+  # all configurations sources
+  config:
+
+    # file based configuration - has the highest priority
+    # loads all .yaml/yml and .properties files in alphabetical order from the given path
+    # is active when path is not empty or null and enabled is set to true
+    file-based:
+      # the path to the directory to scan for configuration files
+      # scanning happens recursive meaning that subdirectories will be parsed
+      path:
+      # can be used to disable the file based configuration while the path is still specified
+      enabled: true
+      # if true the directory will be watched for changes. When changes occur, the configuration is automatically reloaded
+      watch: true
+      # The frequency at which the target folder should be polled for changes if 'watch' is true.
+      frequency: 5s
+
+    # http property source configuration - has a lower priority than file-based configuration
+    http:
+      # the url of the http endpoint to query the configuration
+      url:
+      # a file used to persist the fetched HTTP config. Ensures that the last config is used in case of a JVM restart
+      persistence-file: ${inspectit.env.agent-dir}/${inspectit.service-name}/last-http-config.yml
+      # whether the http property source should be used
+      enabled: true
+      # the frequency of polling the http endpoint to check for configuration changes
+      frequency: 30s
+      # the following attributes will be sent as http query parameters when fetching the configuration
+      attributes:
+        service: ${inspectit.service-name}
+        id: ${inspectit.env.pid}@${inspectit.env.hostname}

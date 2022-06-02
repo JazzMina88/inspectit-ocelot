@@ -1,0 +1,29 @@
+inspectit:
+  instrumentation:
+    actions:
+
+      'a_debug_println':
+        docs:
+          since: '1.2.1'
+          description: 'Prints a given object to stdout.'
+          inputs:
+            'value': 'The object to print.'
+        input:
+          'value': 'Object'
+        is-void: true
+        value-body: |
+          System.out.println(value);
+
+      'a_debug_println_2':
+        docs:
+          since: '1.2.1'
+          description: 'Prints two given objects to stdout in the format "A + B".'
+          inputs:
+            'a': 'The first object to print.'
+            'b': 'The second object to print.'
+        input:
+          'a': 'Object'
+          'b': 'Object'
+        is-void: true
+        value-body: |
+          System.out.println(a + "" + b);
