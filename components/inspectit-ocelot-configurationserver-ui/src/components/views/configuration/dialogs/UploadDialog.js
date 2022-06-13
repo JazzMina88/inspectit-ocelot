@@ -1,18 +1,19 @@
 import React from 'react';
-import {Button} from 'primereact/button';
-import {Dialog} from 'primereact/dialog';
+import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
 import Dropzone from 'react-dropzone';
-import {configurationActions} from '../../../../redux/ducks/configuration';
+import { configurationActions } from '../../../../redux/ducks/configuration';
 import PropTypes from 'prop-types';
-import {isSelectionDirectory} from '../../../../redux/ducks/configuration/selectors';
-import {connect} from 'react-redux';
+import { isSelectionDirectory } from '../../../../redux/ducks/configuration/selectors';
+import { connect } from 'react-redux';
+import { notificationActions } from '../../../../redux/ducks/notification';
 
 class UploadDialog extends React.Component {
   constructor() {
     super();
     this.handleClick = this.handleClick.bind(this);
     this.onDrop = (files) => {
-      this.setState({files});
+      this.setState({ files });
     };
     this.state = {
       files: [],
@@ -20,36 +21,28 @@ class UploadDialog extends React.Component {
   }
 
   render() {
-    console.log(this.props);
-
-    const files = this.state.files.map((file) => (
-      <li key={file.name}>
-        {file.name} - {file.size} bytes
-      </li>
-    ));
-
+    const files = this.state.files.map((file) => <li key={file.name}>Your selection: {file.name}</li>);
     return (
       <Dialog
-        header={'Upload file/directory'}
+        header={'Upload one or more files'}
         modal={true}
         visible={this.props.visible}
         onHide={this.props.onHide}
         footer={
           <div>
-            <Button label="Upload" onClick={this.handleClick}/>
-            <Button label="Cancel" className="p-button-secondary" onClick={this.props.onHide}/>
+            <Button label="Upload" onClick={this.handleClick} />
+            <Button label="Cancel" className="p-button-secondary" onClick={this.props.onHide} />
           </div>
         }
       >
         <Dropzone onDrop={this.onDrop}>
-          {({getRootProps, getInputProps}) => (
+          {({ getRootProps, getInputProps }) => (
             <section className="container">
-              <div {...getRootProps({className: 'dropzone'})}>
-                <input {...getInputProps()} />
+              <div {...getRootProps({ className: 'dropzone' })}>
+                <input ref={this.input} {...getInputProps()} />
                 <p>Drag and drop some files here, or click to select files</p>
               </div>
               <aside>
-                <h4>Files</h4>
                 <ul>{files}</ul>
               </aside>
             </section>
@@ -59,18 +52,41 @@ class UploadDialog extends React.Component {
     );
   }
 
-  handleClick() {  
-    this.state.files.forEach((file) => {
-      const fileName = this.props.selection + '/' + file.name;
-      const content = "text";
-      this.props.writeFile(fileName, content, true, true);
-    });
+  handleClick = () => {
+    const { showErrorMessage, showSuccessMessage } = this.props;
+    if (this.props.isDirectory) {
+      this.state.files.forEach((file) => {
+        const fileName = this.props.selection + '/' + file.name;
+        if (file.type === 'application/x-yaml') {
+          let duplicate = false;
+          this.props.files[0].children.forEach((persistedFile) => {
+            if (file.name === persistedFile.name) {
+              showErrorMessage('The file name must be unique');
+              duplicate = true;
+            }
+          });
+          if (!duplicate) {
+            const fileReader = new FileReader();
+            fileReader.readAsText(file);
+            fileReader.onload = (e) => {
+              const content = e.target.result;
+              this.props.writeFile(fileName, content, true, true);
+              showSuccessMessage('The upload was successful');
+            };
+          }
+        } else {
+          showErrorMessage('Wrong file type');
+        }
+      });
+    } else {
+      showErrorMessage('You have to select a directory');
+    }
     this.props.onHide();
-  }
+  };
 }
 
 function mapStateToProps(state) {
-  const {selection, files} = state.configuration;
+  const { selection, files } = state.configuration;
 
   const isDirectory = isSelectionDirectory(state);
 
@@ -83,11 +99,11 @@ function mapStateToProps(state) {
 
 const mapDispatchToProps = {
   writeFile: configurationActions.writeFile,
+  showErrorMessage: notificationActions.showErrorMessage,
+  showSuccessMessage: notificationActions.showSuccessMessage,
 };
 
 UploadDialog.props = {
-  filePath: PropTypes.string,
-  directoryMode: PropTypes.bool,
   visible: PropTypes.bool,
   onHide: PropTypes.bool,
   writeFile: PropTypes.func,
@@ -95,10 +111,8 @@ UploadDialog.props = {
 
 UploadDialog.defaultProperties = {
   visible: true,
-  onHide: () => {
-  },
-  writeFile: () => {
-  },
+  onHide: () => {},
+  writeFile: () => {},
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(UploadDialog);
